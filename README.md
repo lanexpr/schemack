@@ -76,9 +76,9 @@ table Salary {
 ```
 ...
 
-data NonNegativeInt { n : Int | n >= 0 }
+data NonNegativeInt { n Int | n >= 0 }
 
-data NonEmptyString { string : String | size(string) != 0 }
+data NonEmptyString { string String | size(string) != 0 }
 
 # Support for generics
 data Interval<T: Ord> {
