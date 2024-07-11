@@ -1,6 +1,9 @@
 # Schemack
 A schema description language capable of defining strong data integrity checks.
 
+✅ **DRY in Type Definitions: Across DB, backend, frontend, between languages, and microservices.**
+**Let's eliminate duplication of all type and validation definitions, consolidate them in one place, and ensure consistency throughout.**
+
 It will be compiled into SQL and other formats. Plans also include JSON Schema, GraphQL, protobuf, and the WASM Component Model.
 
 ## Status
