@@ -73,11 +73,17 @@ data NonEmptyString { string : String | size(string) != 0 }
 
 ...
 
+# Support for generics
 data Interval<T: Ord> {
     start T,
     end T,
     | start <= end
 }
+
+...
+
+# Support for direct sum
+data Option<T> = Some(T) | None
 
 ...
 ```
