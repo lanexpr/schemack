@@ -24,13 +24,15 @@ fn is_valid_username_character(c: Char) -> Bool {
 ```
 use example.user
 
-# `<` means subtyping (inheritance). A `User` cannot be both an `Employee` and a `Guest` at the same time.
+/*  `<` means subtyping (inheritance).
+ *  A `User` cannot be both an `Employee` and a `Guest` at the same time.
+ */
 
 table Employee < User {
     real_name NonEmptyString,
-    department &Department,    /* `&` means an foreign key reference.
-                                * If `&` is not added, it appears as if the target `table` is 
-                                * defined as `data` instead.
+    department &Department,    /*  `&` means an foreign key reference.
+                                *  If `&` is not added, it appears as if the target `table` is 
+                                *  defined as `data` instead.
                                 */
     birth_date Date,
     hire_date Date,
