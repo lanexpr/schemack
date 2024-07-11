@@ -62,7 +62,7 @@ table Department {
 
 table DepartmentManager {
     department &Department,
-    manager &EmployeePerson,
+    manager &Employee,
 }
 
 table Salary {
