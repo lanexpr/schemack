@@ -23,7 +23,7 @@ fn is_valid_username_character(c Char) -> Bool {
 ### `example/company.schk`
 ```
 use example.user
-use std.type.{NomEmptyString, NonNegativeInt, Interval}
+use std.type.{NonEmptyString, NonNegativeInt, Interval}
 
 /*  `<` means subtyping (inheritance).
  *  A `User` cannot be both an `Employee` and a `Guest` at the same time.
