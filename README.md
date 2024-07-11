@@ -3,7 +3,7 @@ A schema description language capable of defining strong data integrity checks.
 
 It will be compiled into SQL and other formats. Plans also include JSON Schema, GraphQL, Protobuf, and the WASM Component Model.
 
-## Example
+## Syntax
 
 ### `example/user.schk`
 ```
