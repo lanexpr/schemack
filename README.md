@@ -7,7 +7,7 @@ It will be compiled into SQL and other formats. Plans also include JSON Schema, 
 
 ### `example/user.schk`
 ```
-use std.types {NonNegativeInt, NonEmptyString, Interval, rfc.EmailAddress}
+use std.types.{NonEmptyString, rfc.EmailAddress}
 
 table User {
     name NonEmptyString primary,
@@ -15,7 +15,7 @@ table User {
     | name.all(c, is_valid_username_character(c))
 }
 
-fn is_valid_username_character(c: Char) -> Bool {
+fn is_valid_username_character(c Char) -> Bool {
     <boolean expression written in Google Common Expression Language>
 }
 ```
@@ -23,6 +23,7 @@ fn is_valid_username_character(c: Char) -> Bool {
 ### `example/company.schk`
 ```
 use example.user
+use std.type.{NomEmptyString, NonNegativeInt, Interval}
 
 /*  `<` means subtyping (inheritance).
  *  A `User` cannot be both an `Employee` and a `Guest` at the same time.
@@ -45,7 +46,7 @@ table Guest < User {
 
 table Department {
     no NonNegativeInt primary,
-    name NonEmptyString,
+    name NonEmptyString!,
 }
 
 table DepartmentManager {
