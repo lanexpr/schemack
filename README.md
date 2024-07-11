@@ -24,7 +24,7 @@ table User {
 }
 
 fn is_valid_username_character(c Char) -> Bool {
-    <boolean expression written in Google Common Expression Language>
+    /* boolean expression written in Google Common Expression Language */
 }
 ```
 
@@ -33,11 +33,11 @@ fn is_valid_username_character(c Char) -> Bool {
 use example.user
 use std.types.{NonEmptyString, NonNegativeInt, Interval}
 
-/*  `<` means subtyping (inheritance).
+/*  `<:` means subtyping (inheritance).
  *  A `User` cannot be both an `Employee` and a `Guest` at the same time.
  */
 
-table Employee < User {
+table Employee <: User {
     real_name NonEmptyString,
     department &Department,    /*  `&` means an foreign key reference.
                                 *  If `&` is not added, it appears as if the target `table` is 
@@ -48,7 +48,7 @@ table Employee < User {
     | birth_date <= hire_date
 }
 
-table Guest < User {
+table Guest <: User {
     visiting_period Interval<Date>,
 }
 
