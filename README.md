@@ -77,7 +77,7 @@ data Interval<T: Ord> {
 }
 
 # Support for direct sum
-data Option<T> = Some(T) | None
+data Option<T> = Some(T) or None
 
 ...
 ```
