@@ -22,12 +22,12 @@ use std.types.{NonEmptyString, rfc.EmailAddress}
 
 table User {
     name NonEmptyString primary,
-    email EmailAddress!,    # `!` means `unique`
+    email EmailAddress!,    // `!` means `unique`
     | name.all(c, is_valid_username_character(c))
 }
 
-fn is_valid_username_character(c Char) -> Bool {
-    /* boolean expression written in Google Common Expression Language */
+fn is_valid_username_character(c Char) Bool {
+    // boolean expression written in Google Common Expression Language
 }
 ```
 
@@ -36,14 +36,14 @@ fn is_valid_username_character(c Char) -> Bool {
 use example.user
 use std.types.{NonEmptyString, NonNegativeInt, Interval}
 
-/*  `<:` means subtyping (inheritance).
+/*  `<:` means inheritance.
  *  A `User` cannot be both an `Employee` and a `Guest` at the same time.
  */
 
 table Employee <: User {
     real_name NonEmptyString,
     department &Department,    /*  `&` means an foreign key reference.
-                                *  If `&` is not added, it appears as if the target `table` is 
+                                *  If `&` is not added, it appears as if the target `table` is
                                 *  defined as `data` instead.
                                 */
     birth_date Date,
@@ -80,14 +80,14 @@ data NonNegativeInt { n Int | n >= 0 }
 
 data NonEmptyString { string String | size(string) != 0 }
 
-# Support for generics
-data Interval<T: Ord> {
+// Support for generics
+data Interval<T is Ord> {
     start T,
     end T,
     | start <= end
 }
 
-# Support for direct sum
+// Support for direct sum
 data Option<T> = Some(T) or None
 
 ...

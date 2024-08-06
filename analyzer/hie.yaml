@@ -1,0 +1,7 @@
+cradle:
+  cabal:
+    - path: "src"
+      component: "lib:schemack-analyzer"
+
+    - path: "app/Main.hs"
+      component: "schemack-analyzer:exe:schemack-analyzer"

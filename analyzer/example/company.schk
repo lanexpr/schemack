@@ -1,0 +1,37 @@
+use example.user
+use std.types.{NonEmptyString, NonNegativeInt, Interval}
+
+/*  `<:` means inheritance.
+ *  A `User` cannot be both an `Employee` and a `Guest` at the same time.
+ */
+
+table Employee <: User {
+    real_name NonEmptyString,
+    department &Department,    /*  `&` means an foreign key reference.
+                                *  If `&` is not added, it appears as if the target `table` is
+                                *  defined as `data` instead.
+                                */
+    birth_date Date,
+    hire_date Date,
+    | birth_date <= hire_date
+}
+
+table Guest <: User {
+    visiting_period Interval<Date>,
+}
+
+table Department {
+    no NonNegativeInt primary,
+    name NonEmptyString!,
+}
+
+table DepartmentManager {
+    department &Department,
+    manager &Employee,
+}
+
+table Salary {
+    employee &Employee,
+    salary NonNegativeInt,
+    interval Interval<Date>,
+}

@@ -1,0 +1,11 @@
+use std.types.{NonEmptyString, rfc.EmailAddress}
+
+table User {
+    name NonEmptyString primary,
+    email EmailAddress!,    // `!` means `unique`
+    | name.all(c, is_valid_username_character(c))
+}
+
+fn is_valid_username_character(c Char) Bool {
+    // boolean expression written in Google Common Expression Language
+}
