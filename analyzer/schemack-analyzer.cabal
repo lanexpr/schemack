@@ -36,14 +36,15 @@ common common-base
         BlockArguments
         LambdaCase
         RecordWildCards
+        TypeFamilies
 
 library
     import: common-base
 
     exposed-modules:
         Schemack.Lexer
+        Schemack.Pretty
         -- Schemack.Parser
-        -- Schemack.Pretty
 
     build-depends:
         megaparsec ^>= 9.5.0,
