@@ -7,12 +7,14 @@
 
 module Schemack.Lexer where
 
-import Control.Applicative (many)
+import Control.Applicative (many, (<|>))
 import Control.Lens (makePrisms)
 import Data.Bifunctor (first)
 import Data.Bimap (Bimap)
 import Data.Bimap qualified as M
 import Data.Char (isAlphaNum)
+import Data.Either.Extra (fromRight')
+import Data.Function ((&))
 import Data.Functor (($>), (<&>))
 import Data.List qualified as DL
 import Data.List.NonEmpty (NonEmpty ((:|)))
@@ -23,10 +25,9 @@ import Data.Proxy (Proxy (Proxy))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Vector (Vector)
-import Data.Vector qualified as V
 import Data.Void (Void)
 import Text.Megaparsec (
-    MonadParsec (takeWhileP, try),
+    MonadParsec (takeWhileP),
     Parsec,
     PosState (
         PosState,
@@ -52,15 +53,19 @@ import Text.Megaparsec (
     TraversableStream (reachOffset),
     VisualStream (showTokens, tokensLength),
     choice,
+    getInput,
+    getOffset,
+    getSourcePos,
+    runParser,
     (<?>),
  )
-import Text.Megaparsec.Char (char, letterChar, space1)
+import Text.Megaparsec.Char (letterChar, space1)
 import Text.Megaparsec.Char.Lexer qualified as L
 
-type Parser = Parsec Void Text
+type Lexer = Parsec Void Text
 
 data Tok
-    = NameToken Name
+    = Identifier Text
     | Primary
     | Table
     | Trait
@@ -78,6 +83,7 @@ data Tok
     | CloseParen
     | OpenBracket
     | CloseBracket
+    | ModuleDot
     | Delimiter
     | Equal
     | Unique
@@ -90,6 +96,17 @@ data Name = Name {nameQualifier :: Vector Text, qualifiedName :: Text}
     deriving stock (Eq, Ord, Show)
 
 makePrisms ''Tok
+
+runLexer :: String -> Text -> TokenStream
+runLexer sourceName source =
+    runParser
+        do
+            tokens <- many pTokenWithPos
+            rest <- getInput
+            pure $ TokenStream rest tokens
+        sourceName
+        source
+        & fromRight'
 
 tokenTable :: Bimap (Down Text) Tok
 tokenTable =
@@ -111,6 +128,7 @@ tokenTable =
         , (")", CloseParen)
         , ("<", OpenBracket)
         , (">", CloseBracket)
+        , (".", ModuleDot)
         , (",", Delimiter)
         , ("=", Equal)
         , ("!", Unique)
@@ -123,37 +141,36 @@ tokenTable =
 formatToken :: Tok -> String
 formatToken = T.unpack . getDown . fromJust . (`M.lookupR` tokenTable)
 
-pToken :: Parser Tok
+pTokenWithPos :: Lexer (WithPos Tok)
+pTokenWithPos = do
+    start <- getSourcePos
+    startOffset <- getOffset
+    t <- pToken
+    end <- getSourcePos
+    endOffset <- getOffset
+    pure $ WithPos start end (endOffset - startOffset) t
+
+pToken :: Lexer Tok
 pToken =
-    choice $
-        (NameToken <$> pName) :
-        (M.toList tokenTable <&> \(Down sym, tok) -> symbol sym $> tok)
+    choice (M.toList tokenTable <&> \(Down sym, tok) -> symbol sym $> tok)
+        <|> Identifier <$> lexeme pIdentifier
 
-pName :: Parser Name
-pName =
-    lexeme
-        ( Name
-            <$> (many (try $ pIdentifier <* char '.') <&> V.fromList)
-            <*> pIdentifier
-            <?> "qualified name"
-        )
-
-pIdentifier :: Parser Text
+pIdentifier :: Lexer Text
 pIdentifier =
     T.cons
         <$> letterChar
         <*> takeWhileP (Just "alpha num underscore character") (\c -> isAlphaNum c || c == '_')
         <?> "identifier"
 
-symbol :: Text -> Parser Text
+symbol :: Text -> Lexer Text
 symbol = L.symbol sc
 {-# INLINE symbol #-}
 
-lexeme :: Parser a -> Parser a
+lexeme :: Lexer a -> Lexer a
 lexeme = L.lexeme sc
 {-# INLINE lexeme #-}
 
-sc :: Parser ()
+sc :: Lexer ()
 sc =
     L.space
         space1
@@ -161,9 +178,10 @@ sc =
         (L.skipBlockCommentNested "/*" "*/")
 
 data TokenStream = TokenStream
-    { streamInput :: String -- for showing offending lines
+    { streamInput :: Text -- for showing offending lines
     , unTokenStream :: [WithPos Tok]
     }
+    deriving stock (Show)
 
 data WithPos a = WithPos
     { startPos :: SourcePos
@@ -184,7 +202,7 @@ instance Stream TokenStream where
     chunkEmpty Proxy = null
     take1_ (TokenStream _ []) = Nothing
     take1_ (TokenStream str (t : ts)) =
-        Just (t, TokenStream (drop (tokensLength @TokenStream Proxy (t :| [])) str) ts)
+        Just (t, TokenStream (T.drop (tokensLength @TokenStream Proxy (t :| [])) str) ts)
     takeN_ n (TokenStream str s)
         | n <= 0 = Just ([], TokenStream str s)
         | null s = Nothing
@@ -193,13 +211,13 @@ instance Stream TokenStream where
              in case NE.nonEmpty x of
                     Nothing -> Just (x, TokenStream str s')
                     Just nex ->
-                        Just (x, TokenStream (drop (tokensLength @TokenStream Proxy nex) str) s')
+                        Just (x, TokenStream (T.drop (tokensLength @TokenStream Proxy nex) str) s')
     takeWhile_ f (TokenStream str s) =
         let (x, s') = DL.span f s
          in case NE.nonEmpty x of
                 Nothing -> (x, TokenStream str s')
                 Just nex ->
-                    (x, TokenStream (drop (tokensLength @TokenStream Proxy nex) str) s')
+                    (x, TokenStream (T.drop (tokensLength @TokenStream Proxy nex) str) s')
 
 instance VisualStream TokenStream where
     showTokens Proxy =
@@ -210,19 +228,19 @@ instance VisualStream TokenStream where
 
 instance TraversableStream TokenStream where
     reachOffset o PosState{..} =
-        ( Just (prefix ++ restOfLine)
+        ( Just (T.unpack $ prefix <> restOfLine)
         , PosState
             { pstateInput = TokenStream postStr post
             , pstateOffset = max pstateOffset o
             , pstateSourcePos = newSourcePos
             , pstateTabWidth = pstateTabWidth
-            , pstateLinePrefix = prefix
+            , pstateLinePrefix = T.unpack prefix
             }
         )
       where
         prefix =
             if sameLine
-                then pstateLinePrefix ++ preLine
+                then T.pack pstateLinePrefix <> preLine
                 else preLine
         sameLine = sourceLine newSourcePos == sourceLine pstateSourcePos
         newSourcePos =
@@ -232,10 +250,10 @@ instance TraversableStream TokenStream where
                     xs -> endPos (last xs)
                 (x : _) -> startPos x
         (pre, post) = splitAt (o - pstateOffset) (unTokenStream pstateInput)
-        (preStr, postStr) = splitAt tokensConsumed (undefined pstateInput)
-        preLine = reverse . takeWhile (/= '\n') . reverse $ preStr
+        (preStr, postStr) = T.splitAt tokensConsumed (undefined pstateInput)
+        preLine = T.reverse . T.takeWhile (/= '\n') . T.reverse $ preStr
         tokensConsumed =
             case NE.nonEmpty pre of
                 Nothing -> 0
                 Just nePre -> tokensLength @TokenStream Proxy nePre
-        restOfLine = takeWhile (/= '\n') postStr
+        restOfLine = T.takeWhile (/= '\n') postStr
