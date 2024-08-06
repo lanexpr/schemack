@@ -7,7 +7,9 @@ A schema description language capable of defining strong data integrity checks.
 It will be compiled into SQL and other formats. Plans also include JSON Schema, GraphQL, protobuf, and the WASM Component Model.
 
 ## Status
-- [ ] Parser
+- [ ] Parser: 50%
+    - [x] Lexical Analyzer
+    - [ ] Syntax Analyzer
 - [ ] Semantic Analyzer
     - [ ] Name Resolver
     - [ ] CEL interop
